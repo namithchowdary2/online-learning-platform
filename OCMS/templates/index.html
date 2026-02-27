@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OCMS — Online Course Management System</title>
+  <meta name="description" content="The future of online learning. Master Python, Data Analytics, Web Dev, AI/ML and more.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>">
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+
+<!-- ── Custom Cursor ──────────────────────────────────────── -->
+<div id="cursor"></div>
+<div id="cursor-trail"></div>
+
+<!-- ── Particle Canvas ────────────────────────────────────── -->
+<canvas id="particles"></canvas>
+
+<!-- ── Loading Screen ─────────────────────────────────────── -->
+<div id="loading-screen">
+  <div class="loader-logo">OC<span>MS</span></div>
+  <div class="loader-bar-wrap"><div class="loader-bar"></div></div>
+  <div class="loader-text">INITIALIZING LEARNING SYSTEM...</div>
+</div>
+
+<!-- ── Navbar ─────────────────────────────────────────────── -->
+<nav class="navbar">
+  <div class="nav-logo" onclick="showPage('home-page')" style="cursor:none">OC<span>MS</span></div>
+
+  <div class="nav-links">
+    <a class="nav-link active" data-page="home-page"    onclick="showPage('home-page')">Home</a>
+    <a class="nav-link"       data-page="courses-page"  onclick="showPage('courses-page')">Courses</a>
+    <a class="nav-link"       data-page="dashboard-page" onclick="showPage('dashboard-page')">Dashboard</a>
+    <a class="nav-link"       data-page="analytics-page" onclick="showPage('analytics-page')">Analytics</a>
+  </div>
+
+  <div class="nav-search">
+    <input type="text" id="nav-search-input" placeholder="Search courses...">
+    <button onclick="showPage('courses-page');searchCourses(document.getElementById('nav-search-input').value)">🔍</button>
+  </div>
+
+  <div class="nav-actions">
+    <button id="btn-login"    class="btn-nav btn-nav-outline" onclick="openAuth('login')">Sign In</button>
+    <button id="btn-register" class="btn-nav btn-nav-fill"    onclick="openAuth('register')">Get Started</button>
+    <div id="user-menu" style="display:none;align-items:center;gap:0.75rem"></div>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════════
+     PAGE: HOME
+     ═══════════════════════════════════════════════════════ -->
+<div id="home-page" class="page active">
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-grid"></div>
+    <div class="hero-content">
+      <div class="hero-badge">🚀 &nbsp; NEXT-GEN LEARNING PLATFORM</div>
+      <h1 class="hero-title">
+        <span class="line1">MASTER THE SKILLS OF</span>
+        <span class="line2">TOMORROW, TODAY</span>
+      </h1>
+      <p class="hero-subtitle">
+        Learn Python, Data Analytics, Web Development & AI/ML from industry experts.
+        Hands-on projects. Real results. Your future starts here.
+      </p>
+      <div class="hero-actions">
+        <button class="btn-primary" onclick="showPage('courses-page')">🎯 Explore Courses</button>
+        <button class="btn-secondary" onclick="openAuth('register')">🔓 Start Free Today</button>
+      </div>
+      <div class="hero-stats">
+        <div class="stat-item">
+          <div class="stat-number" data-counter="1200" data-suffix="+">0</div>
+          <div class="stat-label">Students</div>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <div class="stat-number" id="course-count">—</div>
+          <div class="stat-label">Courses</div>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <div class="stat-number" data-counter="98" data-suffix="%">0</div>
+          <div class="stat-label">Success Rate</div>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <div class="stat-number" data-counter="24" data-suffix="/7">0</div>
+          <div class="stat-label">Support</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="glow-sep"></div>
+
+  <!-- Featured Courses -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-tag">// COURSES</div>
+      <h2 class="section-title">Featured <span class="accent">Courses</span></h2>
+      <p class="section-subtitle">Industry-designed curriculum updated monthly. Learn by building real projects.</p>
+    </div>
+    <div class="courses-grid" id="home-courses-grid">
+      {% for i in "1234" %}
+      <div style="height:400px;border-radius:20px" class="skeleton"></div>
+      {% endfor %}
+    </div>
+    <div style="text-align:center;margin-top:3rem">
+      <button class="btn-primary" onclick="showPage('courses-page')">View All Courses →</button>
+    </div>
+  </section>
+
+  <div class="glow-sep"></div>
+
+  <!-- Why OCMS -->
+  <section class="section" style="background:var(--bg-secondary)">
+    <div class="section-header">
+      <div class="section-tag">// WHY US</div>
+      <h2 class="section-title">Built for the <span class="accent">Future</span></h2>
+      <p class="section-subtitle">Everything you need to level up your career in one platform.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon fi-1">🧠</div>
+        <div class="feature-title">AI-Curated Content</div>
+        <div class="feature-desc">Our curriculum is updated weekly based on industry trends and real hiring data from top tech companies.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon fi-2">⚡</div>
+        <div class="feature-title">Learn at Warp Speed</div>
+        <div class="feature-desc">Bite-sized video lectures optimized for deep retention. Go from zero to job-ready faster than any bootcamp.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon fi-3">🛠️</div>
+        <div class="feature-title">Project-Based</div>
+        <div class="feature-desc">Every course ends with a portfolio-ready project. Not just theory — real skills employers want to see.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon fi-4">🏆</div>
+        <div class="feature-title">Verified Certificates</div>
+        <div class="feature-desc">Get industry-recognized certificates that stand out on LinkedIn and resumes. Backed by OCMS credentials.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Reviews -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-tag">// TESTIMONIALS</div>
+      <h2 class="section-title">What <span class="accent">Students</span> Say</h2>
+      <p class="section-subtitle">Join thousands of students who transformed their careers with OCMS.</p>
+    </div>
+    <div class="reviews-grid" id="home-reviews-grid">
+      {% for i in "123456" %}
+      <div style="height:220px;border-radius:20px" class="skeleton"></div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="section" style="text-align:center;background:var(--bg-secondary)">
+    <div class="section-tag">// GET STARTED</div>
+    <h2 class="section-title" style="max-width:600px;margin:0 auto 1rem">
+      Ready to <span class="accent">Level Up</span>?
+    </h2>
+    <p class="section-subtitle" style="margin-bottom:2.5rem">
+      Join 1,200+ students already learning on OCMS. Your career transformation starts with one click.
+    </p>
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap">
+      <button class="btn-primary" onclick="showPage('courses-page')">🎯 Browse All Courses</button>
+      <button class="btn-secondary" onclick="openAuth('register')">🔓 Sign Up Free</button>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand-name">OC<span>MS</span></div>
+        <p class="footer-desc">
+          The most advanced online course management platform. Learn from experts, build real projects, and accelerate your career.
+        </p>
+      </div>
+      <div>
+        <div class="footer-col-title">Courses</div>
+        <ul class="footer-links">
+          <li><a href="#" onclick="showPage('courses-page')">Python Basics</a></li>
+          <li><a href="#" onclick="showPage('courses-page')">Data Analytics</a></li>
+          <li><a href="#" onclick="showPage('courses-page')">Web Dev</a></li>
+          <li><a href="#" onclick="showPage('courses-page')">AI / ML</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Platform</div>
+        <ul class="footer-links">
+          <li><a href="#" onclick="showPage('dashboard-page')">Dashboard</a></li>
+          <li><a href="#" onclick="showPage('analytics-page')">Analytics</a></li>
+          <li><a href="#" onclick="openAuth('register')">Sign Up</a></li>
+          <li><a href="#" onclick="openAuth('login')">Login</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Connect</div>
+        <ul class="footer-links">
+          <li><a href="https://github.com/namithchowdary2/online_learning_platform" target="_blank">GitHub</a></li>
+          <li><a href="#">LinkedIn</a></li>
+          <li><a href="#">Twitter</a></li>
+          <li><a href="#">Discord</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span class="footer-copy">© 2025 OCMS — Built with Django REST + Vanilla JS</span>
+      <div class="footer-socials">
+        <button class="social-btn" onclick="window.open('https://github.com/namithchowdary2/online_learning_platform')">🐱</button>
+        <button class="social-btn">🐦</button>
+        <button class="social-btn">💼</button>
+        <button class="social-btn">💬</button>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     PAGE: COURSES
+     ═══════════════════════════════════════════════════════ -->
+<div id="courses-page" class="page">
+  <section class="section">
+    <div class="section-header">
+      <div class="section-tag">// ALL COURSES</div>
+      <h2 class="section-title">Explore Our <span class="accent">Catalog</span></h2>
+      <p class="section-subtitle">Every course includes video lectures, hands-on projects, and a completion certificate.</p>
+    </div>
+
+    <div class="filter-bar">
+      <div id="category-filters" style="display:contents">
+        <button class="filter-btn active">All Courses</button>
+      </div>
+      <input type="text" class="search-courses" id="course-search" placeholder="🔍 Search courses...">
+      <select class="filter-select" onchange="sortCourses(this.value)">
+        <option value="">Sort by</option>
+        <option value="price-asc">Price: Low → High</option>
+        <option value="price-desc">Price: High → Low</option>
+        <option value="title">Title A–Z</option>
+      </select>
+    </div>
+
+    <div class="courses-grid" id="courses-grid">
+      <div class="loading-spinner"></div>
+    </div>
+  </section>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     PAGE: DASHBOARD
+     ═══════════════════════════════════════════════════════ -->
+<div id="dashboard-page" class="page">
+  <section class="section" style="padding-top:2rem">
+
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2.5rem;flex-wrap:wrap;gap:1rem">
+      <div>
+        <div class="section-tag">// MISSION CONTROL</div>
+        <h2 class="section-title" style="margin:0">Platform <span class="accent">Dashboard</span></h2>
+      </div>
+      <div style="display:flex;gap:0.75rem" id="dash-time-display">
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:8px 16px;font-family:var(--font-mono);font-size:0.8rem;color:var(--accent)" id="live-clock">--:--:--</div>
+        <button class="filter-btn active" onclick="loadDashboard()">↻ Refresh</button>
+      </div>
+    </div>
+
+    <!-- KPI Stat Cards -->
+    <div class="dashboard-grid" id="dashboard-stats">
+      {% for i in "1234" %}
+      <div style="height:130px;border-radius:20px" class="skeleton"></div>
+      {% endfor %}
+    </div>
+
+    <!-- Charts Row 1 -->
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:1.5rem;margin-top:2rem" class="dash-charts-row">
+
+      <!-- Enrollments Over Time — Line Chart -->
+      <div class="dash-chart-card">
+        <div class="dash-chart-title">
+          <span>📈 Enrollment Activity</span>
+          <span style="font-size:0.75rem;color:var(--text-muted);font-family:var(--font-mono)">LIVE DATA</span>
+        </div>
+        <div style="position:relative;height:220px"><canvas id="chart-enrollments"></canvas></div>
+      </div>
+
+      <!-- Course Distribution — Doughnut -->
+      <div class="dash-chart-card">
+        <div class="dash-chart-title">
+          <span>🎯 Course Mix</span>
+        </div>
+        <div style="position:relative;height:180px"><canvas id="chart-courses"></canvas></div>
+        <div id="chart-courses-legend" style="margin-top:1rem;display:flex;flex-direction:column;gap:6px;font-size:0.8rem"></div>
+      </div>
+    </div>
+
+    <!-- Charts Row 2 -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.5rem;margin-top:1.5rem" class="dash-charts-row">
+
+      <!-- Revenue Bar Chart -->
+      <div class="dash-chart-card">
+        <div class="dash-chart-title"><span>💰 Revenue by Course</span></div>
+        <div style="position:relative;height:190px"><canvas id="chart-revenue"></canvas></div>
+      </div>
+
+      <!-- Reviews Rating — Horizontal Bar -->
+      <div class="dash-chart-card">
+        <div class="dash-chart-title"><span>⭐ Rating Distribution</span></div>
+        <div style="position:relative;height:190px"><canvas id="chart-ratings"></canvas></div>
+      </div>
+
+      <!-- Activity Radar -->
+      <div class="dash-chart-card">
+        <div class="dash-chart-title"><span>🕸️ Platform Health</span></div>
+        <div style="position:relative;height:190px"><canvas id="chart-radar"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Bottom Row -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:1.5rem">
+
+      <!-- My Course Progress -->
+      <div class="dash-chart-card">
+        <div class="dash-chart-title">
+          <span>🚀 My Course Progress</span>
+        </div>
+        <div id="course-progress"></div>
+      </div>
+
+      <!-- Recent Enrollments Table -->
+      <div class="dash-chart-card">
+        <div class="dash-chart-title">
+          <span>📋 Recent Enrollments</span>
+        </div>
+        <div id="enrollment-table"><div class="loading-spinner"></div></div>
+      </div>
+    </div>
+
+  </section>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     PAGE: ANALYTICS
+     ═══════════════════════════════════════════════════════ -->
+<div id="analytics-page" class="page">
+  <section class="section">
+    <div class="section-header" style="text-align:left;margin-bottom:2rem">
+      <div class="section-tag">// ANALYTICS</div>
+      <h2 class="section-title">Platform <span class="accent">Analytics</span></h2>
+      <p class="section-subtitle" style="text-align:left">Live data from your Django backend API.</p>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1.5rem;margin-bottom:2rem">
+      <div class="dash-stat">
+        <div class="dash-stat-icon">📚</div>
+        <div class="dash-stat-value" id="an-courses">—</div>
+        <div class="dash-stat-label">Total Courses</div>
+      </div>
+      <div class="dash-stat">
+        <div class="dash-stat-icon">👥</div>
+        <div class="dash-stat-value" id="an-users">—</div>
+        <div class="dash-stat-label">Users</div>
+      </div>
+      <div class="dash-stat">
+        <div class="dash-stat-icon">📝</div>
+        <div class="dash-stat-value" id="an-enroll">—</div>
+        <div class="dash-stat-label">Enrollments</div>
+      </div>
+      <div class="dash-stat">
+        <div class="dash-stat-icon">⭐</div>
+        <div class="dash-stat-value" id="an-reviews">—</div>
+        <div class="dash-stat-label">Reviews</div>
+      </div>
+    </div>
+
+    <h3 style="font-family:var(--font-display);font-size:1rem;margin-bottom:1rem;color:var(--accent2)">🔌 Raw API Response — /analytics/</h3>
+    <div id="analytics-data"><div class="loading-spinner"></div></div>
+  </section>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     COURSE DETAIL MODAL
+     ═══════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="course-modal" onclick="if(event.target===this)closeCourseModal()">
+  <div class="modal" id="modal-content">
+    <!-- filled by JS -->
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     VIDEO PLAYER — FULL IN-APP EXPERIENCE
+     ═══════════════════════════════════════════════════════ -->
+<div class="video-modal-overlay" id="video-modal" onclick="if(event.target===this)closeVideoPlayer()">
+  <div class="video-container">
+
+    <!-- Top bar -->
+    <div class="video-header">
+      <div style="display:flex;align-items:center;gap:1rem">
+        <div class="video-dot-red"></div>
+        <div class="video-dot-yellow"></div>
+        <div class="video-dot-green"></div>
+        <span class="video-title" id="video-title">Course Preview</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.75rem">
+        <span style="font-size:0.75rem;font-family:var(--font-mono);color:var(--accent);background:rgba(0,245,212,0.1);padding:4px 10px;border-radius:6px">▶ PLAYING</span>
+        <button class="video-close" onclick="closeVideoPlayer()">✕</button>
+      </div>
+    </div>
+
+    <!-- Main player area -->
+    <div class="video-player-wrap">
+      <iframe
+        id="video-iframe"
+        src=""
+        allowfullscreen
+        allow="autoplay; encrypted-media; picture-in-picture"
+        style="width:100%;height:100%;border:none"
+      ></iframe>
+    </div>
+
+    <!-- Bottom controls bar -->
+    <div class="video-bottom-bar">
+      <div style="display:flex;align-items:center;gap:1rem">
+        <button class="video-ctrl-btn" onclick="reloadVideo()">⟳ Restart</button>
+        <button class="video-ctrl-btn" onclick="togglePiP()">⧉ Picture-in-Picture</button>
+      </div>
+      <div style="font-family:var(--font-mono);font-size:0.75rem;color:var(--text-muted)">
+        Powered by OCMS Player
+      </div>
+      <div style="display:flex;align-items:center;gap:0.75rem">
+        <button class="video-ctrl-btn" onclick="closeVideoPlayer()">✕ Close</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     ENROLL MODAL
+     ═══════════════════════════════════════════════════════ -->
+<div class="enroll-modal" id="enroll-modal">
+  <div class="enroll-box">
+    <button style="position:absolute;top:1rem;right:1rem;background:none;font-size:1.2rem;color:var(--text-muted)" onclick="closeEnrollModal()">✕</button>
+    <div class="enroll-title">🚀 Enroll Now</div>
+    <div class="enroll-subtitle" id="enroll-course-name">Course Name</div>
+    <div style="display:inline-block;margin-bottom:1.25rem;padding:6px 16px;background:rgba(0,245,212,0.08);border:1px solid rgba(0,245,212,0.2);border-radius:20px;font-family:var(--font-display);color:var(--accent);font-size:1.1rem;font-weight:700" id="enroll-price">₹0</div>
+    <div class="form-group">
+      <label class="form-label">Full Name</label>
+      <input type="text" class="form-input" id="enroll-name" placeholder="e.g. Namith Chowdary">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Email Address</label>
+      <input type="email" class="form-input" id="enroll-email" placeholder="you@email.com">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Phone (optional)</label>
+      <input type="tel" class="form-input" id="enroll-phone" placeholder="+91 98765 43210">
+    </div>
+    <div class="enroll-footer">
+      <button class="btn-enroll-submit" onclick="submitEnrollment()">Enroll Now 🎯</button>
+      <button class="btn-cancel" onclick="closeEnrollModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     AUTH PAGE
+     ═══════════════════════════════════════════════════════ -->
+<div id="auth-page">
+  <div class="auth-box" style="position:relative">
+    <button class="auth-close" onclick="closeAuth()">✕</button>
+    <div class="auth-logo">OC<span>MS</span></div>
+    <div class="auth-tagline">The Future of Learning Awaits You</div>
+    <div class="auth-tabs">
+      <div class="auth-tab active" data-tab="login" onclick="switchAuthTab('login')">Sign In</div>
+      <div class="auth-tab" data-tab="register" onclick="switchAuthTab('register')">Register</div>
+    </div>
+
+    <!-- Login -->
+    <div class="auth-form active" id="form-login">
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="email" class="form-input" id="login-email" placeholder="you@email.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" class="form-input" id="login-password" placeholder="••••••••">
+      </div>
+      <button id="login-btn" class="btn-primary" style="width:100%;margin-top:0.5rem" onclick="submitLogin()">Sign In →</button>
+      <div class="auth-footer-text">New here? <a onclick="switchAuthTab('register')">Create an account</a></div>
+    </div>
+
+    <!-- Register -->
+    <div class="auth-form" id="form-register">
+      <div class="form-group">
+        <label class="form-label">Full Name</label>
+        <input type="text" class="form-input" id="reg-name" placeholder="Namith Chowdary">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="email" class="form-input" id="reg-email" placeholder="you@email.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" class="form-input" id="reg-password" placeholder="Min 8 characters">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Role</label>
+        <select class="form-input" id="reg-role">
+          <option value="student">Student</option>
+          <option value="instructor">Instructor</option>
+        </select>
+      </div>
+      <button id="reg-btn" class="btn-primary" style="width:100%;margin-top:0.5rem" onclick="submitRegister()">Create Account 🚀</button>
+      <div class="auth-footer-text">Already registered? <a onclick="switchAuthTab('login')">Sign in</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Toast Container ─────────────────────────────────────── -->
+<div id="toast-container"></div>
+
+<!-- ── Chart.js CDN ────────────────────────────────────────── -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+<!-- ── Scripts ─────────────────────────────────────────────── -->
+<script src="{% static 'js/main.js' %}"></script>
+
+</body>
+</html>
