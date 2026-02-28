@@ -29,17 +29,263 @@ function playHover()   { initAudio(); beep(1200, 0.04, 'sine', 0.02); }
 document.addEventListener('click', ()=>initAudio(), {once:true});
 
 /* ════════════════════════════════════════════════════════════
-   CUSTOM CURSOR
+   DRAGON CURSOR — Full canvas fire + scale trail
    ════════════════════════════════════════════════════════════ */
-const cursor = document.getElementById('cursor');
-const cursorTrail = document.getElementById('cursor-trail');
-let mx=0, my=0, tx=0, ty=0;
-document.addEventListener('mousemove', e => { mx=e.clientX; my=e.clientY; });
-(function animCursor() {
-  tx += (mx-tx)*0.15; ty += (my-ty)*0.15;
-  if (cursor) { cursor.style.left=mx+'px'; cursor.style.top=my+'px'; }
-  if (cursorTrail) { cursorTrail.style.left=tx+'px'; cursorTrail.style.top=ty+'px'; }
-  requestAnimationFrame(animCursor);
+(function initDragonCursor() {
+  const canvas = document.getElementById('dragon-cursor-canvas');
+  const glow   = document.getElementById('cursor-glow');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+  window.addEventListener('resize', () => {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+  });
+
+  let mx = window.innerWidth/2, my = window.innerHeight/2;
+  let prevMx = mx, prevMy = my;
+  let speed = 0;
+
+  // Dragon body trail — array of past positions
+  const trail = [];
+  const TRAIL_LEN = 28;
+
+  // Fire particles
+  const flames = [];
+  class Flame {
+    constructor(x, y, vx, vy) {
+      this.x = x; this.y = y;
+      this.vx = vx + (Math.random()-0.5)*2;
+      this.vy = vy + (Math.random()-0.5)*2 - 1.5;
+      this.life = 1;
+      this.decay = Math.random()*0.06 + 0.03;
+      this.size = Math.random()*8 + 3;
+      this.hue = Math.random()*40;  // 0=red, 40=orange-yellow
+    }
+    update() {
+      this.x += this.vx; this.y += this.vy;
+      this.vy -= 0.12;  // rise
+      this.life -= this.decay;
+      this.size *= 0.96;
+    }
+    draw() {
+      if (this.life <= 0) return;
+      const alpha = this.life * 0.85;
+      const grad = ctx.createRadialGradient(this.x,this.y,0, this.x,this.y,this.size);
+      grad.addColorStop(0, `hsla(${60+this.hue},100%,95%,${alpha})`);
+      grad.addColorStop(0.3, `hsla(${30+this.hue},100%,65%,${alpha})`);
+      grad.addColorStop(0.7, `hsla(${10+this.hue},100%,40%,${alpha*0.6})`);
+      grad.addColorStop(1, `hsla(0,100%,20%,0)`);
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
+      ctx.fillStyle = grad;
+      ctx.fill();
+    }
+  }
+
+  document.addEventListener('mousemove', e => {
+    prevMx = mx; prevMy = my;
+    mx = e.clientX; my = e.clientY;
+    speed = Math.hypot(mx-prevMx, my-prevMy);
+
+    // Spawn fire when moving fast
+    const fireCount = Math.min(Math.floor(speed/3), 8);
+    for (let i = 0; i < fireCount; i++) {
+      const t = i / Math.max(fireCount, 1);
+      const fx = prevMx + (mx-prevMx)*t;
+      const fy = prevMy + (my-prevMy)*t;
+      flames.push(new Flame(fx, fy, (Math.random()-0.5)*3, -Math.random()*2));
+    }
+
+    // Always spawn a few embers even when slow
+    if (Math.random() < 0.4) {
+      flames.push(new Flame(mx, my, (Math.random()-0.5)*1.5, -Math.random()*1.5));
+    }
+  });
+
+  function drawDragonHead(x, y, angle, sz) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+
+    // Dragon head shape — elongated snout
+    ctx.beginPath();
+    ctx.moveTo(sz*1.4, 0);            // snout tip
+    ctx.lineTo(sz*0.8, -sz*0.5);      // top jaw
+    ctx.lineTo(-sz*0.3, -sz*0.65);    // top back
+    ctx.lineTo(-sz*0.8, -sz*0.3);     // back top
+    ctx.lineTo(-sz*0.8, sz*0.3);      // back bottom
+    ctx.lineTo(-sz*0.3, sz*0.65);     // bottom back
+    ctx.lineTo(sz*0.8, sz*0.5);       // bottom jaw
+    ctx.closePath();
+
+    const headGrad = ctx.createLinearGradient(-sz, -sz*0.65, sz*1.4, sz*0.65);
+    headGrad.addColorStop(0, '#1a0a00');
+    headGrad.addColorStop(0.4, '#3d1500');
+    headGrad.addColorStop(0.7, '#6b2600');
+    headGrad.addColorStop(1, '#ff4400');
+    ctx.fillStyle = headGrad;
+    ctx.fill();
+
+    // Scales on head
+    ctx.strokeStyle = 'rgba(255,100,0,0.4)';
+    ctx.lineWidth = 0.5;
+    for (let s = 0; s < 5; s++) {
+      const sx = -sz*0.5 + s*sz*0.35;
+      const sy = -sz*0.2;
+      ctx.beginPath();
+      ctx.arc(sx, sy, sz*0.18, Math.PI, 0);
+      ctx.stroke();
+    }
+
+    // Eye — glowing
+    const eyeX = sz*0.5, eyeY = -sz*0.22;
+    const eyeGrad = ctx.createRadialGradient(eyeX, eyeY, 0, eyeX, eyeY, sz*0.18);
+    eyeGrad.addColorStop(0, '#ffffff');
+    eyeGrad.addColorStop(0.3, '#ffff00');
+    eyeGrad.addColorStop(0.6, '#ff6600');
+    eyeGrad.addColorStop(1, 'transparent');
+    ctx.beginPath();
+    ctx.arc(eyeX, eyeY, sz*0.18, 0, Math.PI*2);
+    ctx.fillStyle = eyeGrad;
+    ctx.fill();
+    // Pupil slit
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.ellipse(eyeX, eyeY, sz*0.04, sz*0.14, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // Nostril
+    ctx.fillStyle = 'rgba(255,50,0,0.7)';
+    ctx.beginPath();
+    ctx.ellipse(sz*1.1, sz*0.1, sz*0.06, sz*0.04, -0.3, 0, Math.PI*2);
+    ctx.fill();
+
+    // Horn
+    ctx.beginPath();
+    ctx.moveTo(-sz*0.1, -sz*0.65);
+    ctx.lineTo(sz*0.2, -sz*1.2);
+    ctx.lineTo(sz*0.35, -sz*0.65);
+    ctx.closePath();
+    const hornGrad = ctx.createLinearGradient(0, -sz*1.2, 0, -sz*0.65);
+    hornGrad.addColorStop(0, '#ff8800');
+    hornGrad.addColorStop(1, '#220000');
+    ctx.fillStyle = hornGrad;
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  function drawScaleSegment(x, y, angle, sz, i) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+
+    const t = i / TRAIL_LEN;
+    const alpha = (1 - t) * 0.85;
+    const segSz = sz * (1 - t * 0.6);
+
+    // Body scale
+    ctx.beginPath();
+    ctx.ellipse(0, 0, segSz*0.9, segSz*0.55, 0, 0, Math.PI*2);
+    const bodyGrad = ctx.createLinearGradient(-segSz, -segSz*0.5, segSz, segSz*0.5);
+    bodyGrad.addColorStop(0, `rgba(20,5,0,${alpha})`);
+    bodyGrad.addColorStop(0.5, `rgba(80,25,0,${alpha})`);
+    bodyGrad.addColorStop(1, `rgba(180,60,0,${alpha*0.5})`);
+    ctx.fillStyle = bodyGrad;
+    ctx.fill();
+
+    // Scale ridges
+    if (i % 2 === 0) {
+      ctx.strokeStyle = `rgba(255,120,0,${alpha*0.5})`;
+      ctx.lineWidth = 0.7;
+      for (let r = -1; r <= 1; r++) {
+        ctx.beginPath();
+        ctx.arc(r*segSz*0.25, 0, segSz*0.3, Math.PI*1.1, Math.PI*1.9);
+        ctx.stroke();
+      }
+    }
+
+    // Spine spike
+    if (i % 3 === 0 && i < TRAIL_LEN * 0.8) {
+      ctx.beginPath();
+      ctx.moveTo(0, -segSz*0.55);
+      ctx.lineTo(segSz*0.12, -segSz*1.1);
+      ctx.lineTo(-segSz*0.12, -segSz*0.55);
+      ctx.closePath();
+      ctx.fillStyle = `rgba(255,180,0,${alpha*0.7})`;
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
+  function loop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Update trail
+    trail.unshift({ x: mx, y: my });
+    if (trail.length > TRAIL_LEN) trail.pop();
+
+    // Fire glow on canvas
+    if (speed > 2) {
+      const glowRad = ctx.createRadialGradient(mx, my, 0, mx, my, 80);
+      glowRad.addColorStop(0, 'rgba(255,120,0,0.15)');
+      glowRad.addColorStop(1, 'rgba(255,50,0,0)');
+      ctx.beginPath();
+      ctx.arc(mx, my, 80, 0, Math.PI*2);
+      ctx.fillStyle = glowRad;
+      ctx.fill();
+    }
+
+    // Draw fire particles (behind dragon)
+    flames.forEach(f => { f.update(); f.draw(); });
+    for (let i = flames.length-1; i >= 0; i--) {
+      if (flames[i].life <= 0) flames.splice(i, 1);
+    }
+
+    // Draw dragon body (tail → head)
+    const headSz = 18;
+    for (let i = trail.length-1; i >= 1; i--) {
+      const cur = trail[i], nxt = trail[i-1];
+      const angle = Math.atan2(nxt.y - cur.y, nxt.x - cur.x);
+      drawScaleSegment(cur.x, cur.y, angle, headSz, i);
+    }
+
+    // Draw dragon head at cursor position
+    if (trail.length >= 2) {
+      const headAngle = Math.atan2(trail[0].y - trail[1].y, trail[0].x - trail[1].x);
+      drawDragonHead(mx, my, headAngle, headSz);
+
+      // Mouth fire when moving fast
+      if (speed > 5) {
+        for (let f = 0; f < 3; f++) {
+          const fireAngle = headAngle + (Math.random()-0.5)*0.5;
+          const fireSpeed = speed * 0.4 + Math.random()*3;
+          flames.push(new Flame(
+            mx + Math.cos(headAngle)*22,
+            my + Math.sin(headAngle)*22,
+            Math.cos(fireAngle)*fireSpeed,
+            Math.sin(fireAngle)*fireSpeed - 1
+          ));
+        }
+      }
+    }
+
+    // Update CSS glow div
+    if (glow) {
+      glow.style.left = mx + 'px';
+      glow.style.top  = my + 'px';
+      const glowSize = 20 + speed * 2;
+      glow.style.width  = glowSize + 'px';
+      glow.style.height = glowSize + 'px';
+      glow.style.opacity = Math.min(speed / 10, 1);
+    }
+
+    requestAnimationFrame(loop);
+  }
+  loop();
 })();
 
 /* ════════════════════════════════════════════════════════════
@@ -859,8 +1105,198 @@ async function submitEnrollment() {
 /* ════════════════════════════════════════════════════════════
    AUTH — Login via /login/, Register via /register/
    ════════════════════════════════════════════════════════════ */
+/* ════════════════════════════════════════════════════════════
+   LAMP GATE — user must flip the switch first
+   ════════════════════════════════════════════════════════════ */
+let lampLit = false;
+let lampFireInterval = null;
+
+function activateLamp() {
+  if (lampLit) return;
+  lampLit = true;
+
+  const sw = document.getElementById('lamp-switch');
+  const hint = document.getElementById('gate-hint');
+  const gateTitle = document.getElementById('gate-title');
+  const gateSub = document.getElementById('gate-subtitle');
+
+  sw.classList.remove('off');
+  sw.classList.add('on');
+  hint.textContent = '🔥 The flame awakens...';
+  gateTitle.textContent = 'ILLUMINATED';
+  gateSub.textContent = 'The path is now open. Enter, if you dare.';
+
+  // Start fire animation on lamp canvas
+  startLampFire();
+
+  // Glow up the lamp
+  document.getElementById('lamp-container').classList.add('lit');
+  document.getElementById('lamp-glow-ring').classList.add('active');
+  document.getElementById('lamp-light-rays').classList.add('active');
+  document.body.classList.add('lamp-on');
+
+  // After dramatic pause, reveal the auth form
+  setTimeout(() => {
+    document.getElementById('auth-gate').classList.add('fade-out');
+    setTimeout(() => {
+      document.getElementById('auth-gate').style.display = 'none';
+      const wrap = document.getElementById('auth-box-wrap');
+      wrap.classList.remove('locked');
+      wrap.classList.add('unlocked');
+      generateCaptcha();
+    }, 600);
+  }, 1800);
+}
+
+function startLampFire() {
+  const canvas = document.getElementById('lamp-fire-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  canvas.width = 200; canvas.height = 200;
+  const particles = [];
+
+  class LampFlame {
+    constructor() { this.reset(); }
+    reset() {
+      this.x = 80 + Math.random()*40;
+      this.y = 120 + Math.random()*10;
+      this.vx = (Math.random()-0.5)*2;
+      this.vy = -(Math.random()*3 + 1.5);
+      this.life = 1;
+      this.decay = Math.random()*0.04 + 0.025;
+      this.size = Math.random()*14 + 4;
+      this.hue = Math.random()*50;
+    }
+    update() {
+      this.x += this.vx + Math.sin(Date.now()*0.005 + this.x)*0.3;
+      this.y += this.vy;
+      this.life -= this.decay;
+      this.size *= 0.97;
+      if (this.life <= 0) this.reset();
+    }
+    draw() {
+      const a = this.life * 0.9;
+      const g = ctx.createRadialGradient(this.x,this.y,0, this.x,this.y,this.size);
+      g.addColorStop(0, `hsla(${55+this.hue},100%,98%,${a})`);
+      g.addColorStop(0.3, `hsla(${35+this.hue},100%,70%,${a})`);
+      g.addColorStop(0.7, `hsla(${15+this.hue},100%,40%,${a*0.5})`);
+      g.addColorStop(1, 'transparent');
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
+      ctx.fillStyle = g;
+      ctx.fill();
+    }
+  }
+
+  for (let i = 0; i < 40; i++) particles.push(new LampFlame());
+
+  function animFire() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach(p => { p.update(); p.draw(); });
+    lampFireInterval = requestAnimationFrame(animFire);
+  }
+  animFire();
+}
+
+/* ════════════════════════════════════════════════════════════
+   MATH INTEGRATION CAPTCHA — god-level calculus
+   ════════════════════════════════════════════════════════════ */
+let captchaAnswer = '';
+let captchaHint = '';
+
+const INTEGRALS = [
+  // [display, answer, hint]
+  ['∫ 2x dx', 'x^2+C', 'Power rule: ∫xⁿdx = xⁿ⁺¹/(n+1)'],
+  ['∫ 3x² dx', 'x^3+C', 'Power rule on x²'],
+  ['∫ eˣ dx', 'e^x+C', 'eˣ integrates to itself'],
+  ['∫ cos(x) dx', 'sin(x)+C', 'Trig integral'],
+  ['∫ sin(x) dx', '-cos(x)+C', 'Trig integral'],
+  ['∫ 1/x dx', 'ln|x|+C', 'Reciprocal integral'],
+  ['∫ xᵉ dx  [e=2]', 'x^3/3+C', 'Evaluate with e=2'],
+  ['∫ 4x³ dx', 'x^4+C', 'Power rule on 4x³'],
+  ['∫₀¹ 2x dx', '1', 'Definite: [x²] from 0 to 1'],
+  ['∫₀² x dx', '2', 'Definite: [x²/2] from 0 to 2'],
+  ['∫₀^π sin(x) dx', '2', 'Definite trig: [-cos(x)] from 0 to π'],
+  ['∫ sec²(x) dx', 'tan(x)+C', 'Trig identity derivative'],
+  ['∫ 2eˣ dx', '2e^x+C', 'Constant multiple rule'],
+  ['∫ (x+1)² dx', 'x^3/3+x^2+x+C', 'Expand then integrate'],
+  ['∫₀¹ 3x² dx', '1', 'Definite: [x³] from 0 to 1'],
+  ['∫ √x dx', '2x^(3/2)/3+C', 'Write √x = x^(1/2)'],
+  ['∫ 1/(x²) dx', '-1/x+C', 'Write as x⁻²'],
+  ['∫ 6x² - 4x dx', '2x^3-2x^2+C', 'Term by term'],
+  ['∫₁² 2x dx', '3', 'Definite: [x²] from 1 to 2'],
+  ['∫ e^(2x) dx', 'e^(2x)/2+C', 'Chain rule in reverse'],
+];
+
+function generateCaptcha() {
+  const idx = Math.floor(Math.random() * INTEGRALS.length);
+  const [prob, ans, hint] = INTEGRALS[idx];
+
+  // Store normalised answer (strip spaces, lowercase)
+  captchaAnswer = ans.replace(/\s/g,'').toLowerCase();
+  captchaHint   = hint;
+
+  const el = document.getElementById('captcha-problem');
+  const hintEl = document.getElementById('captcha-hint');
+  if (el) {
+    el.innerHTML = `
+      <div class="captcha-box">
+        <div class="captcha-integral">${prob}</div>
+        <div class="captcha-tag">⚠️ Required to proceed</div>
+      </div>`;
+  }
+  if (hintEl) hintEl.textContent = '';
+
+  const ans_input = document.getElementById('captcha-answer');
+  if (ans_input) ans_input.value = '';
+}
+
+function refreshCaptcha() {
+  generateCaptcha();
+  document.getElementById('captcha-hint').textContent = '↻ New problem generated';
+}
+
+function validateCaptcha() {
+  const input = document.getElementById('captcha-answer');
+  if (!input) return true; // skip if not found
+  const val = (input.value || '').replace(/\s/g,'').toLowerCase();
+  const hintEl = document.getElementById('captcha-hint');
+
+  if (!val) {
+    if (hintEl) hintEl.textContent = '❌ Answer the integral first!';
+    input.style.borderColor = 'var(--accent3)';
+    return false;
+  }
+  if (val !== captchaAnswer) {
+    if (hintEl) hintEl.textContent = `❌ Wrong! Hint: ${captchaHint}`;
+    input.style.borderColor = '#ef4444';
+    input.value = '';
+    generateCaptcha();
+    return false;
+  }
+  if (hintEl) hintEl.textContent = '✅ Correct! You may pass.';
+  input.style.borderColor = 'var(--accent)';
+  return true;
+}
+
 function openAuth(tab='login') {
+  lampLit = false; // reset gate each time
   document.getElementById('auth-page').classList.add('open');
+  // Reset gate visibility
+  const gate = document.getElementById('auth-gate');
+  const wrap = document.getElementById('auth-box-wrap');
+  if (gate) { gate.style.display = ''; gate.classList.remove('fade-out'); }
+  if (wrap) { wrap.classList.add('locked'); wrap.classList.remove('unlocked'); }
+  // Reset lamp
+  const sw = document.getElementById('lamp-switch');
+  if (sw) { sw.classList.add('off'); sw.classList.remove('on'); }
+  document.getElementById('lamp-container')?.classList.remove('lit');
+  document.getElementById('lamp-glow-ring')?.classList.remove('active');
+  document.getElementById('lamp-light-rays')?.classList.remove('active');
+  document.body.classList.remove('lamp-on');
+  if (lampFireInterval) { cancelAnimationFrame(lampFireInterval); lampFireInterval = null; }
+  const fc = document.getElementById('lamp-fire-canvas');
+  if (fc) { const c = fc.getContext('2d'); c.clearRect(0,0,fc.width,fc.height); }
   switchAuthTab(tab);
   document.body.style.overflow = 'hidden';
   playClick();
@@ -880,6 +1316,12 @@ async function submitLogin() {
   const email    = document.getElementById('login-email').value.trim();
   const password = document.getElementById('login-password').value;
   if (!email||!password) { toast('Enter your email and password', 'warn'); return; }
+
+  // Validate math captcha first
+  if (!validateCaptcha()) {
+    toast('❌ Solve the integral CAPTCHA to continue', 'error');
+    return;
+  }
 
   const btn = document.getElementById('login-btn');
   btn.textContent = '⏳ Signing in...'; btn.disabled = true;

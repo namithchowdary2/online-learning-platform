@@ -11,9 +11,9 @@
 </head>
 <body>
 
-<!-- ── Custom Cursor ──────────────────────────────────────── -->
-<div id="cursor"></div>
-<div id="cursor-trail"></div>
+<!-- ── Dragon Cursor ──────────────────────────────────────── -->
+<canvas id="dragon-cursor-canvas"></canvas>
+<div id="cursor-glow"></div>
 
 <!-- ── Particle Canvas ────────────────────────────────────── -->
 <canvas id="particles"></canvas>
@@ -471,57 +471,98 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════
-     AUTH PAGE
+     AUTH GATE — LIGHT SWITCH RITUAL
      ═══════════════════════════════════════════════════════ -->
 <div id="auth-page">
-  <div class="auth-box" style="position:relative">
-    <button class="auth-close" onclick="closeAuth()">✕</button>
-    <div class="auth-logo">OC<span>MS</span></div>
-    <div class="auth-tagline">The Future of Learning Awaits You</div>
-    <div class="auth-tabs">
-      <div class="auth-tab active" data-tab="login" onclick="switchAuthTab('login')">Sign In</div>
-      <div class="auth-tab" data-tab="register" onclick="switchAuthTab('register')">Register</div>
-    </div>
 
-    <!-- Login -->
-    <div class="auth-form active" id="form-login">
-      <div class="form-group">
-        <label class="form-label">Email</label>
-        <input type="email" class="form-input" id="login-email" placeholder="you@email.com">
+  <!-- PHASE 1: Light switch gate -->
+  <div id="auth-gate">
+    <div id="auth-gate-bg"></div>
+    <div id="auth-gate-content">
+      <div id="gate-title">THE VAULT IS SEALED</div>
+      <div id="gate-subtitle">Only those who ignite the flame may enter</div>
+      <div id="lamp-container" onclick="activateLamp()">
+        <div id="lamp-body">
+          <div id="lamp-head"></div>
+          <div id="lamp-neck"></div>
+          <div id="lamp-base"></div>
+          <div id="lamp-switch-wrap">
+            <div id="lamp-switch" class="off">
+              <div id="lamp-switch-knob"></div>
+            </div>
+            <div id="lamp-switch-label">IGNITE</div>
+          </div>
+        </div>
+        <div id="lamp-glow-ring"></div>
+        <div id="lamp-light-rays"></div>
+        <canvas id="lamp-fire-canvas"></canvas>
       </div>
-      <div class="form-group">
-        <label class="form-label">Password</label>
-        <input type="password" class="form-input" id="login-password" placeholder="••••••••">
-      </div>
-      <button id="login-btn" class="btn-primary" style="width:100%;margin-top:0.5rem" onclick="submitLogin()">Sign In →</button>
-      <div class="auth-footer-text">New here? <a onclick="switchAuthTab('register')">Create an account</a></div>
-    </div>
-
-    <!-- Register -->
-    <div class="auth-form" id="form-register">
-      <div class="form-group">
-        <label class="form-label">Full Name</label>
-        <input type="text" class="form-input" id="reg-name" placeholder="Namith Chowdary">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Email</label>
-        <input type="email" class="form-input" id="reg-email" placeholder="you@email.com">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Password</label>
-        <input type="password" class="form-input" id="reg-password" placeholder="Min 8 characters">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Role</label>
-        <select class="form-input" id="reg-role">
-          <option value="student">Student</option>
-          <option value="instructor">Instructor</option>
-        </select>
-      </div>
-      <button id="reg-btn" class="btn-primary" style="width:100%;margin-top:0.5rem" onclick="submitRegister()">Create Account 🚀</button>
-      <div class="auth-footer-text">Already registered? <a onclick="switchAuthTab('login')">Sign in</a></div>
+      <div id="gate-hint">↑ Flip the switch to illuminate your path</div>
     </div>
   </div>
+
+  <!-- PHASE 2: Actual auth form (hidden until lamp is ON) -->
+  <div id="auth-box-wrap" class="locked">
+    <div class="auth-box" style="position:relative">
+      <button class="auth-close" onclick="closeAuth()">✕</button>
+      <div class="auth-logo">OC<span>MS</span></div>
+      <div class="auth-tagline">The Flame Has Been Lit</div>
+      <div class="auth-tabs">
+        <div class="auth-tab active" data-tab="login" onclick="switchAuthTab('login')">Sign In</div>
+        <div class="auth-tab" data-tab="register" onclick="switchAuthTab('register')">Register</div>
+      </div>
+
+      <!-- Login -->
+      <div class="auth-form active" id="form-login">
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-input" id="login-email" placeholder="you@email.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" class="form-input" id="login-password" placeholder="••••••••">
+        </div>
+        <!-- MATH CAPTCHA -->
+        <div class="form-group" id="captcha-group">
+          <label class="form-label" style="color:var(--accent2)">🧮 Prove You're Human — Solve This Integral</label>
+          <div id="captcha-problem"></div>
+          <div style="display:flex;gap:0.75rem;align-items:center;margin-top:0.75rem">
+            <input type="text" class="form-input" id="captcha-answer" placeholder="Enter exact answer...">
+            <button type="button" class="filter-btn" onclick="refreshCaptcha()" title="New problem" style="flex-shrink:0;padding:10px 14px">↻</button>
+          </div>
+          <div id="captcha-hint" style="font-size:0.75rem;color:var(--text-muted);margin-top:6px;font-family:var(--font-mono)"></div>
+        </div>
+        <button id="login-btn" class="btn-primary" style="width:100%;margin-top:0.5rem" onclick="submitLogin()">Sign In →</button>
+        <div class="auth-footer-text">New here? <a onclick="switchAuthTab('register')">Create an account</a></div>
+      </div>
+
+      <!-- Register -->
+      <div class="auth-form" id="form-register">
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <input type="text" class="form-input" id="reg-name" placeholder="Namith Chowdary">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-input" id="reg-email" placeholder="you@email.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" class="form-input" id="reg-password" placeholder="Min 8 characters">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Role</label>
+          <select class="form-input" id="reg-role">
+            <option value="student">Student</option>
+            <option value="instructor">Instructor</option>
+          </select>
+        </div>
+        <button id="reg-btn" class="btn-primary" style="width:100%;margin-top:0.5rem" onclick="submitRegister()">Create Account 🚀</button>
+        <div class="auth-footer-text">Already registered? <a onclick="switchAuthTab('login')">Sign in</a></div>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <!-- ── Toast Container ─────────────────────────────────────── -->
